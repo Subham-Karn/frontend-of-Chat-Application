@@ -1,16 +1,52 @@
-# React + Vite
+# Chat Web App — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern real-time chat application frontend built using **React**, **Socket.IO**, and **REST APIs**.  
+This project communicates with a Node.js + Express + MongoDB backend and provides a clean, fast, and responsive chat UI.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+##  Features
 
-## React Compiler
+- User Registration & Login (JWT Auth)
+- Real-time Messaging (Socket.IO)
+-  Chat History & Message Persistence
+-  User Profiles (Full Name, Email)
+-  Fully Responsive UI
+-  Smooth Real-time Typing & Message Updates
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+##  Tech Stack (Frontend)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **React** (Vite)
+- **React Router DOM**
+- **Socket.IO Client**
+- **Axios**
+- **Tailwind CSS / Custom CSS**
+
+---
+
+## 📦 Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Subham-Karn/frontend-of-Chat-Application
+cd frontend
+
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the development server:
+
+```bash
+npm run dev
+```
+### Live Demo
+
+[Click Here](https://frontend-chatwebapp.onrender.com)
