@@ -1,4 +1,4 @@
-import { Loader2, Plus, MessageSquare, Users, LogOut, Search, Hash, User } from "lucide-react";
+import { Loader2, Plus, MessageSquare, Users, LogOut, Search, Hash, User, Send } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { createChannel, fetchChannels } from "../api";
 import BrowseChannelsModal from "../components/BrowseChannelsModal";
@@ -19,7 +19,8 @@ const Chat = () => {
   const [joinedChannels, setJoinedChannels] = useState([]);
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
-  const messagesRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const user = (() => {
     try {
@@ -58,11 +59,9 @@ const Chat = () => {
     s.on("connect", () => {});
     s.on("channel-messages", (msgs) => {
       setMessages(msgs || []);
-      setTimeout(() => messagesRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     });
     s.on("new-message", (msg) => {
       setMessages((prev) => [...prev, msg]);
-      setTimeout(() => messagesRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     });
     s.on("channel-created", (ch) => {
       setChannels((prev) => [...prev, ch]);
@@ -82,10 +81,16 @@ const Chat = () => {
       s.off("new-message");
       s.off("channel-created");
       s.off("connect_error");
-      // do not disconnect here to keep connection across route changes; if you want, call disconnectSocket()
     };
     // eslint-disable-next-line
   }, [user]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -153,6 +158,18 @@ const Chat = () => {
 
   const selectedChannelData = channels.find((ch) => ch && ch._id === selectedChannel);
 
+  // Check if message is from current user
+  const isCurrentUserMessage = (message) => {
+    // Compare by sender ID if available, otherwise by sender name
+    if (message.senderId) {
+      return message.senderId === user?._id;
+    }
+    if (message.senderName) {
+      return message.senderName === user?.fullName || message.senderName === user?.username;
+    }
+    return false;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="max-w-6xl mx-auto mb-8">
@@ -182,7 +199,7 @@ const Chat = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsShowBrowseChannels(true)}
-                className="flex items-center gap-2 px-4 py-3 bg-yellow-500 hover:bg-yellow-500/30 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white text-sm font-medium rounded-lg transition-all shadow hover:shadow-md"
               >
                 Browse All
               </button>
@@ -193,7 +210,7 @@ const Chat = () => {
                 </div>
                 <div className="hidden sm:block">
                   <div className="font-medium text-gray-900">{user?.fullName || "User"}</div>
-                  <div className="text-xs text-gray-500">@{user?.email || "username"}</div>
+                  <div className="text-xs text-gray-500">@{user?.email?.split('@')[0] || "username"}</div>
                 </div>
                 <button
                   onClick={handleLogout}
@@ -234,7 +251,7 @@ const Chat = () => {
               </div>
               <button
                 onClick={() => setIsShowCreateChannel(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg transition-colors"
+                className="flex items-center gap-2 px-3 py-2 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white text-sm font-medium rounded-lg transition-all shadow hover:shadow-md"
               >
                 <Plus size={16} />
                 New
@@ -261,9 +278,9 @@ const Chat = () => {
                 ))}
                 <button
                   onClick={() => setIsShowBrowseChannels(true)}
-                  className="w-full mt-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-500/30 text-white text-sm font-medium rounded-lg transition-colors"
+                  className="w-full mt-2 px-4 py-3 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-medium rounded-lg transition-all shadow hover:shadow-md"
                 >
-                  Browse All
+                  Browse All Channels
                 </button>
               </div>
             ) : (
@@ -275,16 +292,16 @@ const Chat = () => {
                 <p className="text-sm text-gray-500 mt-1">
                   {searchQuery ? "Try a different search term" : "Get started by creating a channel"}
                 </p>
-                <div className="flex gap-3 mt-4 justify-center">
+                <div className="flex flex-col gap-3 mt-4 justify-center">
                   <button
                     onClick={() => setIsShowCreateChannel(true)}
-                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors"
+                    className="px-4 py-2.5 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-medium rounded-lg transition-all"
                   >
                     Create Channel
                   </button>
                   <button
                     onClick={() => setIsShowBrowseChannels(true)}
-                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-500/30 text-white font-medium rounded-lg transition-colors"
+                    className="px-4 py-2.5 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-medium rounded-lg transition-all"
                   >
                     Browse All
                   </button>
@@ -299,7 +316,7 @@ const Chat = () => {
             <>
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-linear-to-r from-yellow-500 to-yellow-600 rounded-lg flex items-center justify-center shadow">
                     <Hash size={20} className="text-white" />
                   </div>
                   <div>
@@ -317,63 +334,109 @@ const Chat = () => {
                 </div>
               </div>
 
-              <div className="flex-1 p-4 overflow-y-auto">
-                <div className="space-y-4">
-                  {messages.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                        <MessageSquare size={24} className="text-gray-400" />
-                      </div>
-                      <h3 className="font-medium text-gray-900">
-                        Welcome to #{selectedChannelData.channelName || selectedChannelData.name}!
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">You've joined this channel. Start the conversation!</p>
-                      <p className="text-xs text-gray-500 mt-2">
-                        Channel created on {selectedChannelData.createdAt ? new Date(selectedChannelData.createdAt).toLocaleDateString() : "N/A"}
-                      </p>
+              {/* Messages Container */}
+              <div 
+                ref={messagesContainerRef}
+                className="flex-1 p-4 overflow-y-auto space-y-4"
+              >
+                {messages.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto bg-linear-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center mb-4 shadow-sm">
+                      <MessageSquare size={24} className="text-yellow-600" />
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {messages.map((m) => (
-                        <div key={m._id || Math.random()} className={`p-3 rounded-lg ${m.senderId === user?.id ? "bg-yellow-50 ml-auto max-w-[70%]" : "bg-gray-100 max-w-[70%]"}`}>
-                          <div className="text-xs text-gray-500 mb-1">{m.senderName} • {new Date(m.createdAt).toLocaleTimeString()}</div>
-                          <div className="text-gray-900">{m.text}</div>
+                    <h3 className="font-medium text-gray-900">
+                      Welcome to #{selectedChannelData.channelName || selectedChannelData.name}!
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1">You've joined this channel. Start the conversation!</p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Channel created on {selectedChannelData.createdAt ? new Date(selectedChannelData.createdAt).toLocaleDateString() : "N/A"}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {messages.map((message) => {
+                      const isCurrentUser = isCurrentUserMessage(message);
+                      return (
+                        <div
+                          key={message._id || Math.random()}
+                          className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-[70%] rounded-2xl px-4 py-3 shadow-sm ${
+                              isCurrentUser
+                                ? 'bg-linear-to-r from-yellow-500 to-yellow-600 text-white rounded-tr-none'
+                                : 'bg-gray-100 text-gray-900 rounded-tl-none'
+                            }`}
+                          >
+                            {!isCurrentUser && (
+                              <div className="text-xs font-medium text-gray-700 mb-1">
+                                {message.senderName || "Unknown User"}
+                              </div>
+                            )}
+                            <div className={`text-sm ${isCurrentUser ? 'text-white' : 'text-gray-800'}`}>
+                              {message.text}
+                            </div>
+                            <div className={`text-xs mt-2 flex justify-end ${isCurrentUser ? 'text-yellow-100' : 'text-gray-500'}`}>
+                              {message.createdAt 
+                                ? new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                : 'Just now'
+                              }
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                      <div ref={messagesRef} />
-                    </div>
-                  )}
-                </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </>
+                )}
               </div>
 
-              <div className="p-4 border-t border-gray-200">
+              {/* Message Input */}
+              <div className="p-4 border-t border-gray-200 bg-gray-50">
                 <div className="flex gap-2">
                   <input
                     value={messageText}
                     onChange={(e) => setMessageText(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    placeholder="Type a message..."
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 shadow-sm"
+                    placeholder="Type your message here..."
                   />
                   <button
                     onClick={handleSendMessage}
-                    className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors"
+                    disabled={!messageText.trim()}
+                    className={`px-5 py-3 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                      messageText.trim()
+                        ? 'bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white shadow hover:shadow-md'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
                   >
-                    Send
+                    <Send size={18} />
                   </button>
                 </div>
               </div>
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-6">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                <MessageSquare size={40} className="text-gray-400" />
+              <div className="w-24 h-24 bg-linear-to-br from-yellow-100 to-yellow-200 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                <MessageSquare size={40} className="text-yellow-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">Select a Channel</h3>
-              <p className="text-gray-600 text-center max-w-md mb-6">Choose a channel from the list to start chatting with your team members.</p>
+              <p className="text-gray-600 text-center max-w-md mb-6">
+                Choose a channel from the list to start chatting with your team members.
+              </p>
               <div className="flex items-center gap-4">
-                <button onClick={() => setIsShowCreateChannel(true)} className="px-6 py-3 bg-yellow-500 hover:bg-yellow-500/30 text-white font-medium rounded-lg transition-colors">Create Channel</button>
-                <button onClick={() => setIsShowBrowseChannels(true)} className="px-6 py-3 bg-yellow-500 hover:bg-yellow-500/30 text-white font-medium rounded-lg transition-colors">Browse All</button>
+                <button 
+                  onClick={() => setIsShowCreateChannel(true)} 
+                  className="px-6 py-3 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-medium rounded-lg transition-all shadow hover:shadow-md"
+                >
+                  Create Channel
+                </button>
+                <button 
+                  onClick={() => setIsShowBrowseChannels(true)} 
+                  className="px-6 py-3 bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-medium rounded-lg transition-all shadow hover:shadow-md"
+                >
+                  Browse All
+                </button>
               </div>
             </div>
           )}
